@@ -304,7 +304,8 @@ export default {
   margin-top: 10px
 
 .tips
-  font-size: 5px
+  font-size: 12px
+  color: #ccc
 
 .json-editor
   border: #768192 1px solid
