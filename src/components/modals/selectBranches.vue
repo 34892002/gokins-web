@@ -1,13 +1,19 @@
 <template>
-  <CModal title="请输入仓库分支或者commitSha" :show="shown" @update:show="(val) => $emit('update:shown', val)" :centered="true">
+  <CModal title="拉取选项" :show="shown" @update:show="(val) => $emit('update:shown', val)" :centered="true">
     <template #footer>
       <CButton color="warning" variant="outline" @click="$emit('update:shown', false)">取消</CButton>
-      <CButton color="info" @click="run" :disabled="submiting">确定</CButton>
+      <CButton color="info" @click="run" :disabled="loading">确定</CButton>
     </template>
     <div>
-
-      <Multiselect v-model="value" :options="options" placeholder="不填就是默认分支" label="name" track-by="name"
-        :clearOnSelect="false" :preserveSearch="true" @search-change="change" :showNoResults="false"></Multiselect>
+      <CRow>
+        <CCol>
+          <CInput label="仓库引用: " placeholder="不填则使用默认分支" v-model="curSha" />
+          <label>历史纪录: </label>
+          <Multiselect v-model="value" :options="options" placeholder="使用上次的分支或者commitSha" 
+            label="name" track-by="name" @select="change">
+          </Multiselect>
+        </CCol>
+      </CRow>
     </div>
   </CModal>
 </template>
@@ -43,7 +49,8 @@ export default {
     return {
       value: {},
       options: [],
-      submiting: false,
+      loading: false,
+      curSha: '',
     }
   },
   methods: {
@@ -63,17 +70,13 @@ export default {
       }).catch((err) => UtilCatch(this, err));
     },
     change(value, id) {
-      this.value = { name: value }
-      this.searchSha(value)
+      this.curSha = value.name
     },
     run() {
-      if (this.submiting) return;
-      this.submiting = true;
-      console.log('run value:', this.value);
-      let par = { pipelineId: this.id, }
-      if (this.value) {
-        par.sha = this.value.name
-      }
+      if (this.loading) return;
+      this.loading = true;
+      const par = { pipelineId: this.id, }
+      par.sha = this.curSha || ''
       RunPipeline(par)
         .then((res) => {
           this.value = {}
@@ -83,7 +86,7 @@ export default {
             this.$router.push(`/pipeline/build/${res.data.id}`);
         })
         .catch((err) => UtilCatch(this, err, () => {
-          this.submiting = false;
+          this.loading = false;
         }));
     }
   },
